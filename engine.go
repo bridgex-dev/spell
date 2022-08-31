@@ -22,10 +22,10 @@ func NewEngine() *Engine {
 		EnableCSRFToken: true,
 		EsbuildOptions: api.BuildOptions{
 			EntryPoints: []string{
-				"/web/assets/src/index.ts",
-				"/web/assets/stylesheets/main.css",
+				"web/assets/src/index.ts",
+				"web/assets/stylesheets/main.css",
 			},
-			Outdir:            "dist",
+			Outdir:            "dist/public",
 			Bundle:            true,
 			Write:             true,
 			Sourcemap:         api.SourceMapNone,
