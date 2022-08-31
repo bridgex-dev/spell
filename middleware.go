@@ -5,26 +5,26 @@ import (
 	"net/http"
 )
 
-func (hw *Engine) Handler(next http.Handler) http.Handler {
-	if hw.EnableCSRFToken {
-		return hw.withCsrf(next)
+func (e *Engine) Handler(next http.Handler) http.Handler {
+	if e.EnableCSRFToken {
+		return e.withCsrf(next)
 	}
 
-	return hw.middleware(next)
+	return e.middleware(next)
 }
 
-func (hw *Engine) middleware(next http.Handler) http.Handler {
+func (e *Engine) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(w, r, ContextOptions{hw.Cookies, hw.EnableCSRFToken})
-		hw.addContext(ctx)
+		ctx := NewContext(w, r, ContextOptions{e.Cookies, e.EnableCSRFToken})
+		e.addContext(ctx)
 
 		next.ServeHTTP(w, r)
 
 		ctx.makeResponse()
-		hw.removeContext(ctx.id)
+		e.removeContext(ctx.id)
 	})
 }
 
-func (hw *Engine) withCsrf(next http.Handler) http.Handler {
-	return nosurf.NewPure(hw.middleware(next))
+func (e *Engine) withCsrf(next http.Handler) http.Handler {
+	return nosurf.NewPure(e.middleware(next))
 }
