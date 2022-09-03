@@ -10,7 +10,6 @@ type Context struct {
 	w        http.ResponseWriter
 	r        *http.Request
 	id       string
-	outFlash Flash
 	Flash    Flash
 	Session  Session
 	ViewData map[string]interface{}
@@ -41,14 +40,10 @@ func NewContext(w http.ResponseWriter, r *http.Request, options ContextOptions) 
 		w:        w,
 		r:        r,
 		options:  options,
-		Flash:    flash,
+		Flash:    NewFlash(),
 		Session:  session,
 		ViewData: viewData,
 	}
-}
-
-func (c *Context) SetFlash(key string, value string) {
-	c.outFlash[key] = value
 }
 
 func (c *Context) Redirect(url string) {
@@ -89,8 +84,8 @@ func getSession(r *http.Request) Session {
 }
 
 func (c *Context) makeResponse() {
-	if len(c.outFlash) > 0 {
-		flash, err := c.outFlash.encode()
+	if len(c.Flash) > 0 {
+		flash, err := c.Flash.encode()
 		if err == nil {
 			setCookies(c.w, FlashCookie, flash, c.options.cookies)
 		}
