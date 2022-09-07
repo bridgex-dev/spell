@@ -3,6 +3,7 @@ package spell
 import (
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type CookiesOptions struct {
@@ -26,6 +27,19 @@ func setCookies(w http.ResponseWriter, name, value string, options CookiesOption
 		Name:     name,
 		Path:     options.Path,
 		Value:    encodeCookie(value),
+		Secure:   options.Secure,
+		HttpOnly: options.HttpOnly,
+		SameSite: options.SameSite,
+	})
+}
+
+func removeCookie(w http.ResponseWriter, name string, options CookiesOptions) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     name,
+		Path:     options.Path,
+		Value:    "",
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 		Secure:   options.Secure,
 		HttpOnly: options.HttpOnly,
 		SameSite: options.SameSite,

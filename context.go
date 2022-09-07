@@ -90,7 +90,7 @@ func (c *Context) makeResponse() {
 			setCookies(c.w, FlashCookie, flash, c.options.cookies)
 		}
 	} else {
-		setCookies(c.w, FlashCookie, "", c.options.cookies)
+		removeCookie(c.w, FlashCookie, c.options.cookies)
 	}
 
 	session, err := c.Session.encode()
