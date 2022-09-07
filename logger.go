@@ -39,6 +39,7 @@ const (
 
 type Logger interface {
 	Logf(level LogLevel, msg string, args ...interface{})
+	SetLevel(level LogLevel)
 }
 
 type DefaultLogger struct {
