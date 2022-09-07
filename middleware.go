@@ -15,13 +15,25 @@ func (e *Engine) Handler(next http.Handler) http.Handler {
 
 func (e *Engine) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(w, r, ContextOptions{e.Cookies, e.EnableCSRFToken})
+		ctx, err := NewContext(
+			w,
+			r,
+			ContextOptions{e.Cookies, e.EnableCSRFToken},
+			e.Logger,
+		)
+		if err != nil {
+			e.Logger.Logf(ErrorLevel, "Error creating context: %s", err)
+			return
+		}
+
 		e.addContext(ctx)
+		defer e.removeContext(ctx.id)
 
 		next.ServeHTTP(w, r)
 
-		ctx.makeResponse()
-		e.removeContext(ctx.id)
+		if err = ctx.makeResponse(); err != nil {
+			e.Logger.Logf(ErrorLevel, "Error making response: %s", err)
+		}
 	})
 }
 

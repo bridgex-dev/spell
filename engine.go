@@ -11,6 +11,7 @@ type Engine struct {
 	Cookies         CookiesOptions
 	EnableCSRFToken bool
 	EsbuildOptions  api.BuildOptions
+	Logger          Logger
 }
 
 func NewEngine() *Engine {
@@ -33,14 +34,17 @@ func NewEngine() *Engine {
 			MinifyIdentifiers: true,
 			MinifySyntax:      true,
 		},
+		Logger: NewDefaultLogger(),
 	}
 }
 
 func (e *Engine) addContext(c *Context) {
+	e.Logger.Logf(DebugLevel, "Adding context with id: %s", c.id)
 	e.contexts[c.id] = c
 }
 
 func (e *Engine) removeContext(id string) {
+	e.Logger.Logf(DebugLevel, "Removing context with id: %s", id)
 	delete(e.contexts, id)
 }
 

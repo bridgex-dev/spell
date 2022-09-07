@@ -14,6 +14,7 @@ type Context struct {
 	Session  Session
 	ViewData map[string]interface{}
 	options  ContextOptions
+	Logger   Logger
 }
 
 type ContextOptions struct {
@@ -21,12 +22,26 @@ type ContextOptions struct {
 	csrfToken bool
 }
 
-func NewContext(w http.ResponseWriter, r *http.Request, options ContextOptions) *Context {
+func NewContext(
+	w http.ResponseWriter,
+	r *http.Request,
+	options ContextOptions,
+	logger Logger,
+) (*Context, error) {
 	id := markRequest(r)
-	flash := getFlash(r)
-	session := getSession(r)
-	viewData := make(map[string]interface{})
+	flash, err := getFlash(r)
+	if err != nil {
+		logger.Logf(ErrorLevel, "Error getting flash: %s", err)
+		return nil, err
+	}
 
+	session, err := getSession(r)
+	if err != nil {
+		logger.Logf(ErrorLevel, "Error getting session: %s", err)
+		return nil, err
+	}
+
+	viewData := make(map[string]interface{})
 	viewData["flash"] = flash
 
 	if options.csrfToken {
@@ -43,7 +58,8 @@ func NewContext(w http.ResponseWriter, r *http.Request, options ContextOptions) 
 		Flash:    NewFlash(),
 		Session:  session,
 		ViewData: viewData,
-	}
+		Logger:   logger,
+	}, nil
 }
 
 func (c *Context) Redirect(url string) {
@@ -57,44 +73,50 @@ func markRequest(r *http.Request) string {
 	return id
 }
 
-func getFlash(r *http.Request) Flash {
+func getFlash(r *http.Request) (Flash, error) {
 	flash := NewFlash()
 
 	value, err := getCookieValue(r, FlashCookie)
 	if err != nil {
-		return flash
+		return flash, err
 	}
 
-	_ = flash.decode(value)
+	err = flash.decode(value)
 
-	return flash
+	return flash, err
 }
 
-func getSession(r *http.Request) Session {
+func getSession(r *http.Request) (Session, error) {
 	session := NewSession()
 
 	value, err := getCookieValue(r, SessionCookie)
 	if err != nil {
-		return session
+		return session, err
 	}
 
-	_ = session.decode(value)
+	err = session.decode(value)
 
-	return session
+	return session, err
 }
 
-func (c *Context) makeResponse() {
-	if len(c.Flash) > 0 {
-		flash, err := c.Flash.encode()
-		if err == nil {
-			setCookies(c.w, FlashCookie, flash, c.options.cookies)
-		}
-	} else {
-		removeCookie(c.w, FlashCookie, c.options.cookies)
+func (c *Context) makeResponse() error {
+	c.Logger.Logf(DebugLevel, "Making response for context with id: %s", c.id)
+
+	flash, err := c.Flash.encode()
+	if err != nil {
+		c.Logger.Logf(ErrorLevel, "Error encoding flash: %s", err)
+		return err
 	}
 
+	setCookies(c.w, FlashCookie, flash, c.options.cookies)
+
 	session, err := c.Session.encode()
-	if err == nil {
-		setCookies(c.w, SessionCookie, session, c.options.cookies)
+	if err != nil {
+		c.Logger.Logf(ErrorLevel, "Error encoding session: %s", err)
+		return err
 	}
+
+	setCookies(c.w, SessionCookie, session, c.options.cookies)
+
+	return nil
 }
