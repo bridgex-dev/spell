@@ -43,11 +43,8 @@ func NewEngine() *Engine {
 			MinifyIdentifiers: true,
 			MinifySyntax:      true,
 		},
-		Logger: NewDefaultLogger(),
-		CookieManager: NewCookieManager(
-			"hash-key",
-			"block-key",
-		),
+		Logger:        NewDefaultLogger(),
+		CookieManager: NewCookieManager("qTvsuYaLZTOmaRz8", "qTvsuYaLZTOmaRz8"),
 	}
 }
 
