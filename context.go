@@ -1,20 +1,22 @@
 package spell
 
 import (
+	"errors"
 	"github.com/justinas/nosurf"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 )
 
 type Context struct {
-	w        http.ResponseWriter
-	r        *http.Request
-	id       string
-	Flash    Flash
-	Session  Session
-	ViewData map[string]interface{}
-	options  ContextOptions
-	Logger   Logger
+	w             http.ResponseWriter
+	r             *http.Request
+	id            string
+	Flash         Flash
+	Session       Session
+	ViewData      map[string]interface{}
+	options       ContextOptions
+	Logger        Logger
+	CookieManager CookieManager
 }
 
 type ContextOptions struct {
@@ -27,18 +29,25 @@ func NewContext(
 	r *http.Request,
 	options ContextOptions,
 	logger Logger,
+	cookieManager CookieManager,
 ) (*Context, error) {
-	id := markRequest(r)
-	flash, err := getFlash(r)
-	if err != nil {
-		logger.Logf(ErrorLevel, "Error getting flash: %s", err)
-		return nil, err
+	if logger == nil {
+		return nil, errors.New("logger cannot be nil")
 	}
 
-	session, err := getSession(r)
+	if cookieManager == nil {
+		return nil, errors.New("cookie manager cannot be nil")
+	}
+
+	id := markRequest(r)
+	flash, err := getFlash(cookieManager, r)
+	if err != nil {
+		logger.Logf(ErrorLevel, "Error getting flash: %s", err)
+	}
+
+	session, err := getSession(cookieManager, r)
 	if err != nil {
 		logger.Logf(ErrorLevel, "Error getting session: %s", err)
-		return nil, err
 	}
 
 	viewData := make(map[string]interface{})
@@ -51,14 +60,15 @@ func NewContext(
 	}
 
 	return &Context{
-		id:       id,
-		w:        w,
-		r:        r,
-		options:  options,
-		Flash:    NewFlash(),
-		Session:  session,
-		ViewData: viewData,
-		Logger:   logger,
+		id:            id,
+		w:             w,
+		r:             r,
+		options:       options,
+		Flash:         NewFlash(),
+		Session:       session,
+		ViewData:      viewData,
+		Logger:        logger,
+		CookieManager: cookieManager,
 	}, nil
 }
 
@@ -73,28 +83,18 @@ func markRequest(r *http.Request) string {
 	return id
 }
 
-func getFlash(r *http.Request) (Flash, error) {
+func getFlash(manager CookieManager, r *http.Request) (Flash, error) {
 	flash := NewFlash()
 
-	value, err := getCookieValue(r, FlashCookie)
-	if err != nil {
-		return flash, err
-	}
-
-	err = flash.decode(value)
+	err := manager.GetCookieValue(r, FlashCookie, &flash)
 
 	return flash, err
 }
 
-func getSession(r *http.Request) (Session, error) {
+func getSession(manager CookieManager, r *http.Request) (Session, error) {
 	session := NewSession()
 
-	value, err := getCookieValue(r, SessionCookie)
-	if err != nil {
-		return session, err
-	}
-
-	err = session.decode(value)
+	err := manager.GetCookieValue(r, SessionCookie, &session)
 
 	return session, err
 }
@@ -102,21 +102,17 @@ func getSession(r *http.Request) (Session, error) {
 func (c *Context) makeResponse() error {
 	c.Logger.Logf(DebugLevel, "Making response for context with id: %s", c.id)
 
-	flash, err := c.Flash.encode()
+	err := c.CookieManager.SetCookies(c.w, FlashCookie, c.Flash, c.options.cookies)
 	if err != nil {
-		c.Logger.Logf(ErrorLevel, "Error encoding flash: %s", err)
+		c.Logger.Logf(ErrorLevel, "Error setting flash cookie: %s", err)
 		return err
 	}
 
-	setCookies(c.w, FlashCookie, flash, c.options.cookies)
-
-	session, err := c.Session.encode()
+	err = c.CookieManager.SetCookies(c.w, SessionCookie, c.Session, c.options.cookies)
 	if err != nil {
-		c.Logger.Logf(ErrorLevel, "Error encoding session: %s", err)
+		c.Logger.Logf(ErrorLevel, "Error setting session cookie: %s", err)
 		return err
 	}
-
-	setCookies(c.w, SessionCookie, session, c.options.cookies)
 
 	return nil
 }

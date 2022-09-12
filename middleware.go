@@ -20,6 +20,7 @@ func (e *Engine) middleware(next http.Handler) http.Handler {
 			r,
 			ContextOptions{e.Cookies, e.EnableCSRFToken},
 			e.Logger,
+			e.CookieManager,
 		)
 		if err != nil {
 			e.Logger.Logf(ErrorLevel, "Error creating context: %s", err)

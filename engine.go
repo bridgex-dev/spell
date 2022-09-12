@@ -9,9 +9,18 @@ import (
 type Engine struct {
 	contexts        map[string]*Context
 	Cookies         CookiesOptions
+	CookieManager   CookieManager
 	EnableCSRFToken bool
 	EsbuildOptions  api.BuildOptions
 	Logger          Logger
+}
+
+var defaultCookies = CookiesOptions{
+	Path:     "/",
+	Domain:   "",
+	SameSite: http.SameSiteStrictMode,
+	Secure:   true,
+	HttpOnly: true,
 }
 
 func NewEngine() *Engine {
@@ -35,6 +44,10 @@ func NewEngine() *Engine {
 			MinifySyntax:      true,
 		},
 		Logger: NewDefaultLogger(),
+		CookieManager: NewCookieManager(
+			"hash-key",
+			"block-key",
+		),
 	}
 }
 
