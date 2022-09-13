@@ -103,7 +103,7 @@ func TestMakeResponse(t *testing.T) {
 	c.Flash.Error("error")
 	c.Session["foo"] = "bar"
 
-	err := c.makeResponse()
+	err := c.WriteHeader()
 	if err != nil {
 		t.Errorf("Expected no error, got '%s'", err)
 	}
@@ -130,7 +130,7 @@ func TestMakeResponse(t *testing.T) {
 func TestMakeResponseNoFlash(t *testing.T) {
 	c, _, w := mockContext(mockFlash(), nil)
 
-	err := c.makeResponse()
+	err := c.WriteHeader()
 	if err != nil {
 		t.Errorf("Expected no error, got '%s'", err)
 	}

@@ -32,7 +32,7 @@ func (e *Engine) middleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		if err = ctx.makeResponse(); err != nil {
+		if err = ctx.WriteHeader(); err != nil {
 			e.Logger.Logf(ErrorLevel, "Error making response: %s", err)
 		}
 	})

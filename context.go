@@ -99,7 +99,7 @@ func getSession(manager CookieManager, r *http.Request) (Session, error) {
 	return session, err
 }
 
-func (c *Context) makeResponse() error {
+func (c *Context) WriteHeader() error {
 	c.Logger.Logf(DebugLevel, "Making response for context with id: %s", c.id)
 
 	err := c.CookieManager.SetCookies(c.w, FlashCookie, c.Flash, c.options.cookies)
