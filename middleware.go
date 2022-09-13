@@ -27,8 +27,7 @@ func (e *Engine) middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		e.addContext(ctx)
-		defer e.removeContext(ctx.id)
+		r = withSpellContext(r, ctx)
 
 		next.ServeHTTP(w, r)
 

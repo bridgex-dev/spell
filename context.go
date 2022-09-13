@@ -3,14 +3,12 @@ package spell
 import (
 	"errors"
 	"github.com/justinas/nosurf"
-	uuid "github.com/satori/go.uuid"
 	"net/http"
 )
 
 type Context struct {
 	w             http.ResponseWriter
 	r             *http.Request
-	id            string
 	Flash         Flash
 	Session       Session
 	ViewData      map[string]interface{}
@@ -39,7 +37,6 @@ func NewContext(
 		return nil, errors.New("cookie manager cannot be nil")
 	}
 
-	id := markRequest(r)
 	flash, err := getFlash(cookieManager, r)
 	if err != nil {
 		logger.Logf(ErrorLevel, "Error getting flash: %s", err)
@@ -60,7 +57,6 @@ func NewContext(
 	}
 
 	return &Context{
-		id:            id,
 		w:             w,
 		r:             r,
 		options:       options,
@@ -73,14 +69,8 @@ func NewContext(
 }
 
 func (c *Context) Redirect(url string) {
+	_ = c.WriteHeader()
 	http.Redirect(c.w, c.r, url, http.StatusFound)
-}
-
-func markRequest(r *http.Request) string {
-	id := uuid.NewV4().String()
-	r.Header.Set(HeaderId, id)
-
-	return id
 }
 
 func getFlash(manager CookieManager, r *http.Request) (Flash, error) {
@@ -100,7 +90,7 @@ func getSession(manager CookieManager, r *http.Request) (Session, error) {
 }
 
 func (c *Context) WriteHeader() error {
-	c.Logger.Logf(DebugLevel, "Making response for context with id: %s", c.id)
+	c.Logger.Logf(DebugLevel, "Making response for context")
 
 	err := c.CookieManager.SetCookies(c.w, FlashCookie, c.Flash, c.options.cookies)
 	if err != nil {

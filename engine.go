@@ -48,16 +48,6 @@ func NewEngine() *Engine {
 	}
 }
 
-func (e *Engine) addContext(c *Context) {
-	e.Logger.Logf(DebugLevel, "Adding context with id: %s", c.id)
-	e.contexts[c.id] = c
-}
-
-func (e *Engine) removeContext(id string) {
-	e.Logger.Logf(DebugLevel, "Removing context with id: %s", id)
-	delete(e.contexts, id)
-}
-
 func (e *Engine) GetContext(r *http.Request) *Context {
 	id := r.Header.Get(HeaderId)
 	return e.contexts[id]
