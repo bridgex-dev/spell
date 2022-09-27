@@ -1,13 +1,11 @@
 package spell
 
 import (
-	"encoding/gob"
 	"github.com/evanw/esbuild/pkg/api"
 	"net/http"
 )
 
 type Engine struct {
-	contexts        map[string]*Context
 	Cookies         CookiesOptions
 	CookieManager   CookieManager
 	EnableCSRFToken bool
@@ -24,10 +22,7 @@ var defaultCookies = CookiesOptions{
 }
 
 func NewEngine() *Engine {
-	gob.Register(map[string]interface{}{})
-
 	return &Engine{
-		contexts:        make(map[string]*Context),
 		Cookies:         defaultCookies,
 		EnableCSRFToken: true,
 		EsbuildOptions: api.BuildOptions{
@@ -46,9 +41,4 @@ func NewEngine() *Engine {
 		Logger:        NewDefaultLogger(),
 		CookieManager: NewCookieManager("qTvsuYaLZTOmaRz8", "qTvsuYaLZTOmaRz8"),
 	}
-}
-
-func (e *Engine) GetContext(r *http.Request) *Context {
-	id := r.Header.Get(HeaderId)
-	return e.contexts[id]
 }
